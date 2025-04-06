@@ -1,0 +1,8 @@
+startDelaySeconds: 0
+lowercaseOutputName: false
+lowercaseOutputLabelNames: false
+whitelistObjectNames: ["java.lang:type=*"]
+rules:
+  # Job name label
+  - pattern: ".*"
+    jobName: "spring_boot_app"
