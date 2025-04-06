@@ -4,7 +4,8 @@ import com.project2.project2.Database.dbFunctions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.project2.project2.Database.usersDocModel;
-
+import java.util.*;
+import java.lang.String;
 import java.util.List;
 
 @RestController
@@ -57,5 +58,9 @@ public usersDocModel userobj;
     public List<usersDocModel> gettotalusers(){
         return dbFunctions.getallusers();
     }
-
+    
+    @GetMapping("/")
+    public String default_func(){
+	    return "Welcome to Tomcat Application.........!! java version 17, Maven and spring boot based application";
+     }
 }
