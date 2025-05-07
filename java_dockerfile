@@ -1,0 +1,60 @@
+FROM amazonlinux:2023
+
+# Set environment variables
+ENV LANG=C.UTF-8
+ENV JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
+
+# Install Java Corretto 21
+ARG version=21.0.3.9-1
+RUN set -eux \
+    && yum install -y --allowerasing gnupg2 \
+    && export GNUPGHOME="$(mktemp -d)" \
+    && curl -fL -ocorretto.key https://yum.corretto.aws/corretto.key \
+    && gpg --batch --import corretto.key \
+    && gpg --batch --export --armor '6DC3636DAE534049C8B94623A122542AB04F24E3' > corretto.key \
+    && rpm --import corretto.key \
+    && rm -r "$GNUPGHOME" corretto.key \
+    && curl -fL -o /etc/yum.repos.d/corretto.repo https://yum.corretto.aws/corretto.repo \
+    && grep -q '^gpgcheck=1' /etc/yum.repos.d/corretto.repo \
+    && echo "priority=9" >> /etc/yum.repos.d/corretto.repo \
+    && yum install -y java-21-amazon-corretto-devel-$version \
+    && (find /usr/lib/jvm/java-21-amazon-corretto -name src.zip -delete || true) \
+    && yum install -y fontconfig \
+    && yum clean all
+# Install required packages
+RUN yum install wget tar git procps-ng -y
+
+# Install Maven
+RUN wget https://dlcdn.apache.org/maven/maven-3/3.9.7/binaries/apache-maven-3.9.7-bin.tar.gz && \
+    tar -xzf apache-maven-3.9.7-bin.tar.gz && \
+    mv apache-maven-3.9.7 /opt/maven && \
+    ln -s /opt/maven/bin/mvn /usr/bin/mvn && \
+    rm apache-maven-3.9.7-bin.tar.gz
+
+# Set root password
+RUN echo "root:password" | chpasswd
+
+# Create and set working directory
+RUN mkdir app1
+WORKDIR /app1
+
+# Initialize git and clone repository
+RUN git init
+ARG CACHEBUST=3461
+RUN git pull https://github.com/naiduharinadh/SpringWithReact.git
+
+# Build the application
+WORKDIR /app1/project2
+RUN mvn package -DskipTests
+RUN mvn clean
+RUN mvn clean package -U -DskipTests
+
+# Set the working directory to where the jar file is located
+WORKDIR /app1/project2/target
+
+# Expose ports
+EXPOSE 8080/tcp
+EXPOSE 8080/udp
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "./project2-0.0.1-SNAPSHOT.jar"]
